@@ -17,6 +17,8 @@ final class Nav {
     /** Plays a film, or a show's given episode (season and episode 0 mean "where I left off"). */
     static void play(Activity a, Title t, int season, int episode) {
         Title p = Title.fromJson(t.toJson());
+        p.logo = t.logo;
+        if (p.lang == null) p.lang = t.lang;
         if (p.isTv()) {
             if (season <= 0) {
                 Title last = Store.lastPlayed(a, t);
@@ -44,6 +46,11 @@ final class Nav {
         if (subs != null) {
             i.putExtra(MainActivity.EXTRA_SUBTITLES, subs);
         }
+        // For the loading screen.
+        i.putExtra(MainActivity.EXTRA_NAME, p.name)
+                .putExtra(MainActivity.EXTRA_LINE, p.isTv() ? "S" + p.season + " · E" + p.episode : p.year)
+                .putExtra(MainActivity.EXTRA_BACKDROP, p.backdrop)
+                .putExtra(MainActivity.EXTRA_LOGO, p.logo);
         a.startActivity(i);
     }
 

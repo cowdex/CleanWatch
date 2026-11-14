@@ -109,15 +109,31 @@
   // cinejoy keeps its player settings in localStorage. Before its code reads them, turn on
   // "subtitles on start" in the language the app chose for this title (English for English
   // titles, French for French ones, Arabic otherwise).
-  if (CFG.subLang) {
+  function setSubtitleSettings(lang) {
     try {
       var SETTINGS = 'cinejoy_settings';
       var st = JSON.parse(localStorage.getItem(SETTINGS) || '{}') || {};
       st.autoSubtitles = true;
-      st.defaultSubtitleLanguage = CFG.subLang;
+      st.defaultSubtitleLanguage = lang;
       localStorage.setItem(SETTINGS, JSON.stringify(st));
     } catch (e) {}
   }
+  if (CFG.subLang) {
+    setSubtitleSettings(CFG.subLang);
+  } else if (CFG.warmPath && location.pathname === CFG.warmPath) {
+    // The background page: cinejoy reads its settings only once, here, so its own "subtitles on
+    // start" would use a stale language for every film opened later. Leave the choice to play().
+    try {
+      var st0 = JSON.parse(localStorage.getItem('cinejoy_settings') || '{}') || {};
+      st0.autoSubtitles = false;
+      localStorage.setItem('cinejoy_settings', JSON.stringify(st0));
+    } catch (e) {}
+  }
+
+  // Those settings are only read when cinejoy starts. When the app moves to a film inside an
+  // already-running page, it picks the language in the player's subtitle menu instead, once
+  // the film plays. (Also checked after a normal start: then it is already right.)
+  var wantSubs = CFG.subLang || '', wantSubsFor = location.pathname, choosingSubs = false;
 
   // Sets the subtitle delay in the player's own subtitle panel: 'shift' (by arg seconds) or
   // 'reset'. done(status, value): 'ok' + the new delay, 'noplayer' or 'nopanel'.
@@ -167,6 +183,42 @@
       if (!p) { done('nopanel', ''); return; }
       toMain(function (main) {
         if (!main) { close(); done('nopanel', ''); return; }
+        if (cmd === 'lang') {
+          var links = main.querySelectorAll('.menu-link'), row = null, i;
+          for (i = 0; i < links.length; i++) {
+            var img = links[i].querySelector('img');
+            if (img && img.alt === arg) { row = links[i]; break; }
+          }
+          if (!row) { close(); done('nolang', ''); return; }            // not offered for this title
+          if (/\bselected\b/.test(row.className)) { close(); done('ok', arg); return; }
+          row.click();
+          // The TV can take over a second to react: wait until the language shows as chosen,
+          // or until its list of files opens (languages with many files), whichever comes.
+          t0 = Date.now();
+          waitFor(function () {
+            var q = panel();
+            if (!q) return 'gone';
+            if (!q.querySelector('.menu-title-action')) return 'files';
+            var links2 = q.querySelectorAll('.menu-link');
+            for (var j = 0; j < links2.length; j++) {
+              var im = links2[j].querySelector('img');
+              if (im && im.alt === arg && /\bselected\b/.test(links2[j].className)) return 'chosen';
+            }
+            return null;
+          }, 4000, function (state) {
+            if (state !== 'files') { close(); done(state ? 'ok' : 'nopanel', arg); return; }
+            // The list starts with the language's name, then its files: take the first file.
+            var entries = panel().querySelectorAll('.menu-link');
+            var file = entries.length > 1 ? entries[1] : entries[0];
+            if (file) file.click();
+            t0 = Date.now();
+            waitFor(function () {
+              var q = panel();
+              return !q || q.querySelector('.menu-title-action') ? 'back' : null;
+            }, 2500, function () { close(); done('ok', arg); });
+          });
+          return;
+        }
         main.querySelector('.menu-title-action').click();   // "Customize"
         t0 = Date.now();
         waitFor(function () { return document.querySelector('.settings-popover input[type=number]'); }, 1500, function (num) {
@@ -206,6 +258,84 @@
     if (v && !v.paused) sendProgress();
   }, 15000);
   window.addEventListener('load', sendProgress);
+
+  // ------------------------------------------------ moving between films
+
+  // Navigate the way a click on cinejoy's own link does: its router swaps the page in place,
+  // without reloading the site.
+  function go(path) {
+    if (!document.body) { location.href = path; return; }
+    var a = document.createElement('a');
+    a.href = path;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  function play(path, lang) {
+    if (lang) setSubtitleSettings(lang);
+    wantSubs = lang || '';
+    wantSubsFor = path;
+    choosingSubs = false;
+    toldNoFilm = '';
+    try { deselect(); } catch (e) {}
+    go(path);
+    return 'ok';
+  }
+
+  function leave() {
+    var vs = document.querySelectorAll('video');
+    for (var i = 0; i < vs.length; i++) { try { vs[i].pause(); } catch (e) {} }
+    wantSubs = '';
+    try { deselect(); } catch (e) {}
+    go(CFG.warmPath || '/settings/player');
+  }
+
+  // Waiting in the background: have cinejoy fetch its player pages' code now.
+  var warmed = false;
+  function warm() {
+    if (warmed || !document.body) return;
+    warmed = true;
+
+    ['/watch/movie/1', '/watch/tv/1/1/1'].forEach(function (path) {
+      var a = document.createElement('a');
+      a.href = path;
+      a.setAttribute('data-sveltekit-preload-code', 'eager');
+      a.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none';
+      document.body.appendChild(a);
+      try {
+        a.dispatchEvent(new MouseEvent('mousemove', { bubbles: true }));
+        a.dispatchEvent(new TouchEvent('touchstart', { bubbles: true }));
+      } catch (e) {}
+      setTimeout(function () { a.remove(); }, 10000);
+    });
+  }
+
+  // A film page that shows a message instead of a player (not released yet, unavailable):
+  // tell the app, so its loading screen steps aside and the message can be read.
+  var toldNoFilm = '';
+  setInterval(function () {
+    if (!/\/watch\//.test(location.pathname) || toldNoFilm === location.pathname) return;
+    if (document.querySelector('video')) return;
+    var t = (document.body && document.body.innerText) || '';
+    if (/Hasn.t Released|Releases on|not available|Something went wrong|Go Back/i.test(t)) {
+      toldNoFilm = location.pathname;
+      try { window.CleanWatchBridge.noFilm(); } catch (e) {}
+    }
+  }, 1000);
+
+  setInterval(function () {
+    if (!wantSubs || choosingSubs || location.pathname !== wantSubsFor) return;
+    if (document.querySelector('.settings-popover')) return;   // the viewer is in a menu
+    var v = document.querySelector('video');
+    if (!v || v.paused || v.currentTime < 1) return;
+    choosingSubs = true;
+    subs('lang', wantSubs, function (status) {
+      choosingSubs = false;
+      if (status === 'ok' || status === 'nolang') wantSubs = '';
+    });
+  }, 800);
 
   // ----------------------------------------------------- lighter effects
 
@@ -866,6 +996,9 @@
         RING = !!on;
         mark();
       },
+      play: function (path, lang) { return play(String(path), String(lang || '')); },
+      leave: leave,
+      warm: warm,
       subtitles: function (cmd, arg) {
         subs(cmd, arg, reportSubs);
       },

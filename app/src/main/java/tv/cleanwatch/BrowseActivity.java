@@ -172,6 +172,8 @@ public class BrowseActivity extends Activity {
         Api.top10(hero::setRanks);
         showTab(HOME);
         hero.firstButton().requestFocus();
+        // Once this screen is up, get cinejoy running in the background so Play starts fast.
+        root.postDelayed(() -> Web.warm(this), 2500);
     }
 
     @Override
@@ -179,6 +181,9 @@ public class BrowseActivity extends Activity {
         super.onResume();
         refreshLibrary();
         hero.setActive(list.getSelectedPosition() == 0 && rows.rows.contains(heroRow));
+        if (Web.view == null) {
+            list.postDelayed(() -> Web.warm(this), 2500);   // e.g. after the page's process was lost
+        }
     }
 
     @Override
@@ -189,6 +194,9 @@ public class BrowseActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (isFinishing()) {
+            Web.release();   // leaving the app: free the background page
+        }
         hero.release();
         super.onDestroy();
     }

@@ -40,4 +40,5 @@
     <string name="continue_edit_hint">Press OK on a title to remove it. Back when you\'re done.</string>
     <string name="provider_movies">Movies</string>
     <string name="provider_series">Series</string>
+    <string name="loading_film">Starting…</string>
 </resources>

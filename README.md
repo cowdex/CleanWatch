@@ -23,7 +23,7 @@ replaces the rest:
 - **Browsing is native.** Home, Movies, Shows, My List, search and details are drawn by the app
   itself, with cinejoy's layout, so the remote moves instantly.
 - **Watching is cinejoy.** Play opens cinejoy's own player page, with the remote mapped to its
-  controls.
+  controls. Films start in about 4–8 seconds, behind a loading screen with the film's picture.
 - **Ads are blocked**, and pop-ups and redirects to other sites are refused.
 
 | | |
@@ -44,6 +44,8 @@ replaces the rest:
   pencil.
 - **17 streaming services.** Netflix, Prime Video, Disney+, Apple TV+, HBO Max and more, each
   with its own page of films and series.
+- **Quick film start.** cinejoy is kept running in the background, so Play moves straight to the
+  film instead of loading the whole site first: about 4–8 seconds instead of about 20.
 - **Details pages** with seasons, episode pictures, Play / Resume, My List and similar titles.
 - **Subtitles in your language.** English for English titles, French for French ones, Arabic
   for everything else, switched on automatically. Fix out-of-sync subtitles from the remote in
@@ -70,7 +72,30 @@ and the Top 10 and themed lists from cinejoy's server at `wing.st`. Only the pla
 page. The full cinejoy site is one press away: the gear in the header has
 *Open the cinejoy website*.
 
-### Why it's fast
+### Why films start quickly
+
+Opening cinejoy from nothing took the TV about 20 seconds before a film played: 3 s to set up a
+browser view, then loading and running the site's code (about 90 script files) before the player
+even asked for the video. Now:
+
+1. **cinejoy waits in the background.** A few seconds after the start screen appears, the app
+   loads a light cinejoy page (its player settings page) in a hidden browser view, has the
+   player's code fetched in advance, and then pauses it.
+2. **Play moves inside the running site.** The player screen takes that view and goes to the film
+   the way a click on cinejoy's own link does, without reloading anything. Closing the player
+   gives the view back, ready for the next film.
+3. **A loading screen covers the wait.** The film's picture drifting slowly closer, its logo, and
+   a spinner, until the film actually plays. If cinejoy shows a message instead (for example
+   "This Hasn't Released Yet"), the loading screen steps aside so it can be read.
+
+Measured on the Xiaomi TV: the first film after opening the app starts in about 6–12 seconds,
+later ones in about 3–6. What is left is mostly cinejoy finding a server and the video
+arriving, which depends on the network. Sometimes a source fails and cinejoy switches to
+another ("Source failed. Trying …"), which takes longer; it does the same on the website.
+
+![Loading screen](docs/loading.png)
+
+### Why browsing is fast
 
 - **Leanback grids.** Only the cards on screen exist, they are reused as you scroll, and the
   focused card stays in place while the row slides under it.
@@ -166,9 +191,10 @@ for anything the normal selection can't reach.
 | French | French |
 | Anything else | Arabic |
 
-The app sets cinejoy's own "subtitles on start" and "default subtitle language" settings before
-the player loads, so cinejoy picks the file. If a title has no subtitles in that language,
-none show; pick another from the player's subtitle button.
+Once the film plays, the app picks that language in the player's own subtitle menu (for a
+language with many files, the first one in cinejoy's list). If cinejoy is started fresh rather
+than from the background page, its "subtitles on start" setting does the same. If a title has no
+subtitles in that language, none show; pick another from the player's subtitle button.
 
 **Timing.** cinejoy offers many subtitle files per language, cut from different releases of
 the video, so some run early or late. In the player, hold Back and choose
@@ -214,7 +240,8 @@ adb logcat -s CleanWatch
 | `app/src/main/java/tv/cleanwatch/SearchActivity.java`, `ProviderActivity.java` | Search; one streaming service's titles. |
 | `app/src/main/java/tv/cleanwatch/Api.java` | TMDB and cinejoy's lists, with an in-memory cache. |
 | `app/src/main/java/tv/cleanwatch/Progress.java`, `Store.java` | Continue Watching (from cinejoy) and My List. |
-| `app/src/main/java/tv/cleanwatch/MainActivity.java` | cinejoy's pages: WebView, request filter, remote keys, options menu. |
+| `app/src/main/java/tv/cleanwatch/MainActivity.java`, `Loading.java` | cinejoy's pages: request filter, remote keys, options menu; the loading screen. |
+| `app/src/main/java/tv/cleanwatch/Web.java` | The browser view kept running in the background between films. |
 | `app/src/main/assets/cleanwatch.js` | Runs inside cinejoy's pages: selection, player controls, subtitles, ad hiding. |
 | `app/src/main/java/tv/cleanwatch/AdBlocker.java`, `assets/blocklist*.txt` | Blocked hosts and their matching. |
 | `tools/` | Build, install, blocklist update, banner image. |
@@ -222,7 +249,8 @@ adb logcat -s CleanWatch
 ## Tested on
 
 - **Xiaomi MiTV-MZTU0** (Android 14, WebView 157): browsing, details, search, provider pages,
-  playing films and episodes, subtitle language and timing, Continue Watching.
+  playing films and episodes, subtitle language and timing, Continue Watching, and film start
+  times with the background page (five titles in a row, each with the right subtitles).
 - **Emulated 1080p Android TV** (Android 14, WebView 113): the player controls in full.
 
 ## Notes

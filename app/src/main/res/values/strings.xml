@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CleanWatch</string>
+    <string name="exit_hint">Press BACK again to exit</string>
+    <string name="menu_hint">Hold BACK for options</string>
+    <string name="pointer_on">Pointer mode on. Hold BACK to switch it off.</string>
+    <string name="pointer_off">Pointer mode off</string>
+    <string name="error_title">Can\'t reach the site</string>
+    <string name="error_retry">Press OK to try again</string>
+    <string name="menu_blocked">%1$d blocked this session</string>
+    <string name="menu_pointer">Pointer mode: %1$s</string>
+    <string name="menu_zoom">Page size: %1$s</string>
+    <string name="menu_margin">Screen margin: %1$s</string>
+    <string name="menu_lite">Lighter effects: %1$s</string>
+    <string name="menu_ring">Green outline: %1$s</string>
+    <string name="menu_reload">Reload page</string>
+    <string name="menu_home">Go to start page</string>
+    <string name="menu_exit">Exit</string>
+    <string name="on">On</string>
+    <string name="off">Off</string>
+    <string name="my_list_empty">Nothing here yet. Titles you add with “+ My List” and what you play appear here.</string>
+    <string name="added_to_list">Added to My List</string>
+    <string name="removed_from_list">Removed from My List</string>
+    <string name="menu_website">Open the cinejoy website</string>
+    <string name="search_hint">Search films and shows</string>
+    <string name="search_trending">Trending this week</string>
+    <string name="search_none">Nothing found for “%1$s”</string>
+    <string name="menu_subs_later">Subtitles later  (+0.5 s)</string>
+    <string name="menu_subs_sooner">Subtitles sooner  (−0.5 s)</string>
+    <string name="menu_subs_reset">Reset subtitle timing</string>
+    <string name="menu_back_to_app">Back to CleanWatch</string>
+    <string name="subs_offset">Subtitle timing: %1$s</string>
+    <string name="subs_no_controls">The player\'s subtitle controls aren\'t on screen yet</string>
+    <string name="row_continue">Continue Watching</string>
+    <string name="row_providers">Browse by Provider</string>
+    <string name="row_top10">Top 10 on Cinejoy today</string>
+    <string name="row_because">Because you watched %1$s</string>
+    <string name="row_my_list">My List</string>
+    <string name="removed_from_continue">%1$s removed from Continue Watching</string>
+    <string name="continue_edit_hint">Press OK on a title to remove it. Back when you\'re done.</string>
+    <string name="provider_movies">Movies</string>
+    <string name="provider_series">Series</string>
+</resources>

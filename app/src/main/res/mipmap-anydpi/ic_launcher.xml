@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 6 and 7 (no adaptive icons): dark rounded square with the play triangle. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#0B0B0F"
+        android:pathData="M30,14 L78,14 C86.8,14 94,21.2 94,30 L94,78 C94,86.8 86.8,94 78,94 L30,94 C21.2,94 14,86.8 14,78 L14,30 C14,21.2 21.2,14 30,14 Z" />
+    <path
+        android:fillColor="#95FF50"
+        android:pathData="M44,36.5 C44,34.2 46.5,32.8 48.5,34 L74.5,51.5 C76.3,52.7 76.3,55.3 74.5,56.5 L48.5,74 C46.5,75.2 44,73.8 44,71.5 Z" />
+</vector>

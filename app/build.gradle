@@ -1,0 +1,67 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Private settings that never go into the code: local.properties holds the TMDB key
+// (tmdb.token=...). See README.
+def localProps = new Properties()
+def localFile = rootProject.file('local.properties')
+if (localFile.exists()) {
+    localFile.withInputStream { localProps.load(it) }
+}
+
+android {
+    namespace 'tv.cleanwatch'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'tv.cleanwatch'
+        minSdk 24
+        // 34 on purpose: keeps the BACK key delivered to the app (Android 16 changes that for
+        // apps targeting 36) and avoids forced edge-to-edge. Fine for a sideloaded app.
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+
+        // The site this app opens, and the only hosts the top-level page may navigate to.
+        // Anything else (ad redirects, pop-ups, intent:// links) is refused.
+        buildConfigField 'String', 'HOME_URL', '"https://cinejoy.pk/"'
+        buildConfigField 'String', 'ALLOWED_HOSTS', '"cinejoy.pk,cinejoy.to,ddos-guard.net"'
+        // TMDB API Read Access Token, for the app's own browsing screens.
+        buildConfigField 'String', 'TMDB_TOKEN', "\"${localProps.getProperty('tmdb.token', '')}\""
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // Sideloaded, never published: signed with the debug key so it installs as is.
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        checkReleaseBuilds false
+    }
+}
+
+dependencies {
+    // Only for addDocumentStartJavaScript (runs the TV script before the page's own code).
+    implementation 'androidx.webkit:webkit:1.18.0'
+    // The TV rows: Leanback's grids give remote-friendly focus, scrolling and view recycling.
+    implementation 'androidx.leanback:leanback:1.2.0'
+    // Posters and pictures: sized to the card, cached in memory and on disk.
+    implementation 'com.github.bumptech.glide:glide:4.16.0'
+
+    testImplementation 'junit:junit:4.13.2'
+}
